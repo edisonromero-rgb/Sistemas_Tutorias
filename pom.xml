@@ -4,15 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>edu.uees.tutorias</groupId>
-    <artifactId>sistema-tutorias</artifactId>
+    <groupId>edu.uees.patrones</groupId>
+    <artifactId>semana3-patrones</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>sistema-tutorias</name>
+    <name>semana3-patrones</name>
     <description>
-        Sistema de gestion de tutorias: modelo orientado a objetos que coordina
-        estudiantes, docentes, horarios disponibles y reservas de tutoria.
+        Ae2 - Implementacion comparativa de patrones de diseno (Factory Method y Builder)
+        aplicados al Sistema de gestion de tutorias.
     </description>
 
     <properties>
@@ -23,7 +23,6 @@
     </properties>
 
     <dependencies>
-        <!-- JUnit 5 para pruebas unitarias -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -39,7 +38,7 @@
     </dependencies>
 
     <build>
-        <finalName>sistema-tutorias</finalName>
+        <finalName>semana3-patrones</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -59,7 +58,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <mainClass>edu.uees.tutorias.App</mainClass>
+                    <mainClass>edu.uees.patrones.App</mainClass>
                 </configuration>
             </plugin>
         </plugins>
