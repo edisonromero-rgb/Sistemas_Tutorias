@@ -1,113 +1,78 @@
-# Sistema de Gestión de Tutorías
+# Ae2 — Implementación comparativa de patrones de diseño
 
-Modelo orientado a objetos, en Java/Maven, de un sistema que coordina la
-solicitud y gestión de tutorías académicas entre estudiantes y docentes.
-Implementa la Actividad 5 (Análisis y diseño orientado a objetos) del curso
-de Programación Orientada a Objetos.
+Factory Method y Builder aplicados al Sistema de gestión de tutorías.
+Actividad evaluativa de la Semana 3 (Diseño de Software, UCOM0310).
 
-## Descripción del problema
+## Propósito
 
-El dominio está compuesto por estudiantes que solicitan tutorías, docentes
-que publican horarios disponibles y reservas que representan el encuentro
-entre ambos. El sistema debe permitir:
+Implementar y comparar los patrones creacionales **Factory Method** y
+**Builder** sobre dos problemas concretos del Sistema de gestión de
+tutorías: la creación de distintos mecanismos de notificación (Factory
+Method) y la construcción de una `Reserva` con datos obligatorios y
+opcionales (Builder), justificando técnicamente qué problema resuelve
+cada patrón, cómo se representa en UML y cómo se traduce a Java.
 
-- que un estudiante pueda tener múltiples reservas;
-- que un horario solo pueda estar ocupado por una reserva a la vez;
-- que no se pueda reservar un horario que ya está ocupado;
-- que una reserva pendiente pueda confirmarse, cancelarse o reprogramarse;
-- que una reserva confirmada pueda finalizarse;
-- que los usuarios reciban comunicación de los eventos relevantes;
-- que la información se pueda persistir sin acoplar el dominio a una
-  tecnología de almacenamiento específica.
+## Caso base
+
+El Sistema de gestión de tutorías requiere diferentes mecanismos de
+notificación (correo, SMS, push y, más adelante, WhatsApp) y una
+`Reserva` cuya configuración incluye datos obligatorios (estudiante,
+docente, horario) y datos opcionales (modalidad, notas, canal de
+notificación preferido, recordatorio).
 
 ## Clases principales y responsabilidades
 
-| Clase / interfaz | Responsabilidad |
+### Parte A — Factory Method (`src/main/java/edu/uees/patrones/factory`)
+
+| Clase / interfaz | Rol en el patrón | Responsabilidad |
+|---|---|---|
+| `Notificador` | Product | Contrato para notificar un evento a un destinatario. |
+| `NotificadorCorreo`, `NotificadorSMS`, `NotificadorPush`, `NotificadorWhatsApp` | ConcreteProduct | Implementaciones concretas de notificación por canal. |
+| `NotificadorFactory` | Creator | Declara el factory method `crearNotificador()` y el método plantilla `enviar()` que lo usa. |
+| `NotificadorCorreoFactory`, `NotificadorSMSFactory`, `NotificadorPushFactory`, `NotificadorWhatsAppFactory` | ConcreteCreator | Deciden qué `Notificador` concreto instanciar. |
+| `DemoFactoryMethod` | — | Demuestra la creación/uso de las variantes y la extensión con WhatsApp. |
+
+### Parte B — Builder (`src/main/java/edu/uees/patrones/builder`)
+
+| Clase | Responsabilidad |
 |---|---|
-| `Usuario` (abstracta) | Representar la información común de estudiantes y docentes (id, nombre, correo). |
-| `Estudiante` | Especialización de `Usuario` que solicita tutorías; agrega `carrera`. |
-| `Docente` | Especialización de `Usuario` que publica y administra horarios disponibles; agrega `especialidad`. |
-| `HorarioDisponible` | Representar una franja horaria y proteger su disponibilidad (`reservar()` / `liberar()`). |
-| `EstadoReserva` | Enum con los estados válidos del ciclo de vida de una reserva. |
-| `Reserva` | Registrar el encuentro estudiante–docente–horario y controlar las transiciones de estado (`confirmar`, `cancelar`, `reprogramar`, `finalizar`). |
-| `ServicioReservas` | Coordinar el proceso de reserva; no persiste datos ni envía notificaciones directamente, delega en sus colaboradores. |
-| `Notificador` (interfaz) | Contrato para comunicar eventos importantes a un usuario. |
-| `NotificadorCorreo` | Implementación de `Notificador` que simula el envío de un correo. |
-| `ReservaRepository` (interfaz) | Contrato de persistencia de reservas. |
-| `ReservaRepositoryMemoria` | Implementación de `ReservaRepository` en memoria, usada para pruebas y ejecución local. |
+| `Reserva` | Objeto inmutable con datos de la reserva; solo se construye a través de `ReservaBuilder`. |
+| `ReservaBuilder` | Construye `Reserva` de forma progresiva con Fluent API, valores por defecto para los campos opcionales y validación de los campos obligatorios en `build()`. |
+| `Modalidad`, `CanalNotificacion` | Enums usados por los campos opcionales de `Reserva`. |
+| `DemoBuilder` | Demuestra dos configuraciones distintas de `Reserva` y la validación de campos obligatorios. |
 
-Estructura de paquetes:
+El análisis completo (problema inicial de cada patrón, qué clases cambian
+y cuáles permanecen estables, tabla comparativa y conclusiones) está en
+[`docs/ANALISIS.md`](docs/ANALISIS.md).
+
+## Diagramas UML
+
+| Patrón | Fuente PlantUML | Imagen |
+|---|---|---|
+| Factory Method | [`docs/factory-method.puml`](docs/factory-method.puml) | ![Factory Method](docs/factory-method.png) |
+| Builder | [`docs/builder.puml`](docs/builder.puml) | ![Builder](docs/builder.png) |
+
+## Estructura del repositorio
 
 ```
-sistema-tutorias/
-├── pom.xml
+semana3-patrones/
 ├── README.md
+├── pom.xml
 ├── docs/
-│   ├── modelo-clases.puml
-│   └── modelo-clases.png
+│   ├── ANALISIS.md
+│   ├── factory-method.puml
+│   ├── factory-method.png
+│   ├── builder.puml
+│   └── builder.png
 └── src/
-    ├── main/java/edu/uees/tutorias/
+    ├── main/java/edu/uees/patrones/
     │   ├── App.java
-    │   ├── domain/        (Usuario, Estudiante, Docente, HorarioDisponible, Reserva, EstadoReserva)
-    │   ├── service/        (ServicioReservas)
-    │   ├── notification/   (Notificador, NotificadorCorreo)
-    │   └── repository/     (ReservaRepository, ReservaRepositoryMemoria)
-    └── test/java/edu/uees/tutorias/service/
-        └── ServicioReservasTest.java
+    │   ├── factory/   (Notificador, ConcreteProducts, NotificadorFactory, ConcreteCreators, DemoFactoryMethod)
+    │   └── builder/   (Reserva, ReservaBuilder, Modalidad, CanalNotificacion, DemoBuilder)
+    └── test/java/edu/uees/patrones/
+        ├── factory/NotificadorFactoryTest.java
+        └── builder/ReservaBuilderTest.java
 ```
-
-## Decisiones de diseño relevantes
-
-- **Encapsulación:** todos los atributos son privados. `HorarioDisponible`
-  solo cambia su disponibilidad a través de `reservar()`/`liberar()`, y
-  `Reserva` valida cada transición de estado antes de aplicarla, en lugar
-  de exponer un setter de estado.
-- **Herencia con propósito:** `Usuario` es la abstracción común y
-  `Estudiante`/`Docente` son especializaciones porque ambos son usuarios
-  del sistema con comportamiento propio (no se usa herencia solo para
-  reutilizar código).
-- **Composición y asociación:** `Docente` es dueño del ciclo de vida de los
-  horarios que publica (composición). `Reserva` referencia a estudiante,
-  docente y horario porque colabora con ellos, pero no los "es"
-  (asociación, no herencia).
-- **Sin atributos bidireccionales innecesarios:** `Estudiante` no mantiene
-  una lista interna de reservas; esa consulta se resuelve a través de
-  `ReservaRepository.listarPorEstudiante(...)`, evitando duplicar el
-  estado y mantener sincronizadas dos colecciones.
-- **Bajo acoplamiento:** `ServicioReservas` recibe `ReservaRepository` y
-  `Notificador` como abstracciones por constructor. Cambiar de correo a
-  SMS, o de memoria a una base de datos, no exige modificar la lógica de
-  coordinación.
-- **Responsabilidades fuera de `Reserva`:** deliberadamente no se agregan
-  métodos como `enviarCorreo()`, `guardarEnBaseDatos()` o
-  `generarReporte()` dentro de `Reserva`, porque introducirían
-  responsabilidades ajenas a su estado y aumentarían el acoplamiento.
-
-## Principios SOLID aplicados
-
-- **SRP (Single Responsibility):** `Reserva` controla su propio estado;
-  `ServicioReservas` coordina el caso de uso; `Notificador` se encarga solo
-  de comunicar; `ReservaRepository` se encarga solo de persistir.
-- **OCP (Open/Closed):** `Notificador` y `ReservaRepository` son
-  interfaces; se pueden agregar nuevas implementaciones (`NotificadorSMS`,
-  `ReservaRepositoryJdbc`, etc.) sin modificar `ServicioReservas`.
-- **DIP (Dependency Inversion):** `ServicioReservas(ReservaRepository
-  repository, Notificador notificador)` depende de abstracciones, no de
-  implementaciones concretas; las implementaciones se inyectan por
-  constructor (ver `App.java`).
-- **LSP:** cualquier implementación de `Notificador` o `ReservaRepository`
-  puede sustituir a otra sin alterar el comportamiento esperado por
-  `ServicioReservas` (así se aprovecha en las pruebas, donde se usa un
-  `Notificador` de prueba en memoria).
-
-## Diagrama UML
-
-El diagrama de clases está disponible en dos formatos:
-
-- Fuente editable en PlantUML: [`docs/modelo-clases.puml`](docs/modelo-clases.puml)
-- Imagen: [`docs/modelo-clases.png`](docs/modelo-clases.png)
-
-![Diagrama UML del Sistema de Gestión de Tutorías](docs/modelo-clases.png)
 
 ## Requisitos para ejecutar el proyecto
 
@@ -123,17 +88,17 @@ mvn clean compile
 # Compilar y ejecutar las pruebas unitarias (JUnit 5)
 mvn clean test
 
-# Ejecutar la demostración de consola (App.main)
+# Ejecutar la demostración de consola (Factory Method + Builder)
 mvn compile exec:java
 ```
 
 ## Declaración de uso de inteligencia artificial
 
-Se utilizó un asistente de inteligencia artificial (Claude) como apoyo para
-generar el andamiaje inicial del código Java, el `pom.xml` y este
-`README.md` a partir del análisis de dominio y del diseño ya documentados
-en el trabajo previo (identificación de clases, responsabilidades, reglas
-de negocio y decisiones de cohesión/acoplamiento/SOLID). El estudiante es
-responsable de comprender, verificar, probar y justificar todo el
-contenido y código presentado, y de adaptarlo según el criterio del
-docente.
+Para esta actividad utilicé un asistente de inteligencia artificial
+(Claude). La herramienta se empleó para generar el código Java inicial
+de Factory Method y Builder, el `pom.xml`, los diagramas UML y este
+README, a partir del caso base y los requisitos ya definidos en la guía
+de la actividad. Revisé, probé (compilación y ejecución manual de los
+escenarios cubiertos por las pruebas) y adapté el contenido generado, y
+puedo explicar y justificar el código y las decisiones de diseño
+presentadas.
