@@ -4,15 +4,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>edu.uees.patrones</groupId>
-    <artifactId>semana3-patrones</artifactId>
-    <version>1.0.0</version>
+    <groupId>edu.uees.tutorias</groupId>
+    <artifactId>sistema-tutorias</artifactId>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
-    <name>semana3-patrones</name>
+    <name>sistema-tutorias</name>
     <description>
-        Ae2 - Implementacion comparativa de patrones de diseno (Factory Method y Builder)
-        aplicados al Sistema de gestion de tutorias.
+        Ae3 - Incremento 1 del Sistema de gestion de tutorias: integra el diseno OO de Ae1
+        con Factory Method y Builder (Ae2) y agrega Strategy (politicas de cancelacion) y
+        Observer (reaccion a cambios de estado de una reserva).
     </description>
 
     <properties>
@@ -38,7 +39,7 @@
     </dependencies>
 
     <build>
-        <finalName>semana3-patrones</finalName>
+        <finalName>sistema-tutorias</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -58,7 +59,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <mainClass>edu.uees.patrones.App</mainClass>
+                    <mainClass>edu.uees.tutorias.App</mainClass>
                 </configuration>
             </plugin>
         </plugins>
