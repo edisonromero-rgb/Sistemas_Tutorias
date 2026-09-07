@@ -1,77 +1,106 @@
-# Ae2 — Implementación comparativa de patrones de diseño
+# Sistema de Gestión de Tutorías — Incremento 1 (Ae3)
 
-Factory Method y Builder aplicados al Sistema de gestión de tutorías.
-Actividad evaluativa de la Semana 3 (Diseño de Software, UCOM0310).
+Proyecto integrador de Diseño de Software (UCOM0310). Evoluciona el
+diseño orientado a objetos de Ae1 y los patrones creacionales de Ae2
+(Factory Method y Builder) integrándolos en un único proyecto, y
+agrega dos patrones nuevos motivados por problemas reales del dominio:
+**Strategy** (políticas de cancelación) y **Observer** (reacción a
+cambios de estado de una reserva).
 
 ## Propósito
 
-Implementar y comparar los patrones creacionales **Factory Method** y
-**Builder** sobre dos problemas concretos del Sistema de gestión de
-tutorías: la creación de distintos mecanismos de notificación (Factory
-Method) y la construcción de una `Reserva` con datos obligatorios y
-opcionales (Builder), justificando técnicamente qué problema resuelve
-cada patrón, cómo se representa en UML y cómo se traduce a Java.
+Publicar horarios, reservar tutorías, confirmarlas, cancelarlas,
+reprogramarlas y finalizarlas, protegiendo las reglas del dominio
+(un horario solo puede tener una reserva activa, las transiciones de
+estado son explícitas) y permitiendo que la notificación de eventos y
+la política de cancelación varíen sin modificar el flujo de
+coordinación.
 
-## Caso base
+## Problema y alcance de este incremento
 
-El Sistema de gestión de tutorías requiere diferentes mecanismos de
-notificación (correo, SMS, push y, más adelante, WhatsApp) y una
-`Reserva` cuya configuración incluye datos obligatorios (estudiante,
-docente, horario) y datos opcionales (modalidad, notas, canal de
-notificación preferido, recordatorio).
+Hasta Ae2 el repositorio tenía dos árboles de código desconectados:
+una demo aislada de Factory Method/Builder (`edu.uees.patrones`, sobre
+un `Reserva` de juguete) y el dominio real de Ae1 (`edu.uees.tutorias`,
+que ni usaba Builder ni Factory Method). Este incremento:
 
-## Clases principales y responsabilidades
+1. Retira `edu.uees.patrones` y reintegra Builder y Factory Method
+   sobre el dominio real.
+2. Agrega `TipoReserva` y una política de cancelación (**Strategy**)
+   cuya antelación mínima varía según el tipo (normal, prioritaria,
+   grupal).
+3. Agrega **Observer**: `Reserva` notifica a sus observadores en cada
+   cambio de estado, reemplazando las llamadas manuales que
+   `ServicioReservas` hacía a `Notificador` después de cada operación.
 
-### Parte A — Factory Method (`src/main/java/edu/uees/patrones/factory`)
+El análisis completo (estado inicial, problemas identificados, tabla
+de justificación de cada patrón, SOLID) está en
+[`docs/INCREMENTO1.md`](docs/INCREMENTO1.md). El análisis original de
+Ae2 se conserva en [`docs/ANALISIS.md`](docs/ANALISIS.md).
 
-| Clase / interfaz | Rol en el patrón | Responsabilidad |
+## Componentes principales
+
+| Paquete | Clases / interfaces | Responsabilidad |
 |---|---|---|
-| `Notificador` | Product | Contrato para notificar un evento a un destinatario. |
-| `NotificadorCorreo`, `NotificadorSMS`, `NotificadorPush`, `NotificadorWhatsApp` | ConcreteProduct | Implementaciones concretas de notificación por canal. |
-| `NotificadorFactory` | Creator | Declara el factory method `crearNotificador()` y el método plantilla `enviar()` que lo usa. |
-| `NotificadorCorreoFactory`, `NotificadorSMSFactory`, `NotificadorPushFactory`, `NotificadorWhatsAppFactory` | ConcreteCreator | Deciden qué `Notificador` concreto instanciar. |
-| `DemoFactoryMethod` | — | Demuestra la creación/uso de las variantes y la extensión con WhatsApp. |
+| `domain` | `Usuario`, `Estudiante`, `Docente`, `HorarioDisponible`, `Reserva`, `EstadoReserva` | Dominio y ciclo de vida de una reserva. |
+| `domain` | `ReservaBuilder`, `Modalidad`, `CanalNotificacion`, `TipoReserva` | **Builder**: construye `Reserva` con campos obligatorios y opcionales. |
+| `domain` | `ReservaObserver` | Contrato del **Observer**; `Reserva` es el Subject. |
+| `notification` | `Notificador`, `NotificadorCorreo/SMS/Push/WhatsApp` | Canales de notificación (Product del Factory Method). |
+| `notification.factory` | `NotificadorFactory` y sus `ConcreteCreator`, `NotificadorFactoryProvider` | **Factory Method**: elige el canal según la preferencia de la reserva. |
+| `observer` | `ObservadorNotificaciones`, `ObservadorCalendario`, `ObservadorPanelAdministrativo` | ConcreteObserver: reaccionan a un cambio de estado sin conocerse entre sí. |
+| `cancelacion` | `PoliticaCancelacion` y sus implementaciones, `PoliticaCancelacionProvider` | **Strategy**: antelación mínima para cancelar, según `TipoReserva`. |
+| `repository` | `ReservaRepository`, `ReservaRepositoryMemoria` | Persistencia (DIP). |
+| `service` | `ServicioReservas` | Coordina reserva, repositorio, política de cancelación y observadores por defecto. |
 
-### Parte B — Builder (`src/main/java/edu/uees/patrones/builder`)
+## Patrones utilizados y justificación (resumen)
 
-| Clase | Responsabilidad |
-|---|---|
-| `Reserva` | Objeto inmutable con datos de la reserva; solo se construye a través de `ReservaBuilder`. |
-| `ReservaBuilder` | Construye `Reserva` de forma progresiva con Fluent API, valores por defecto para los campos opcionales y validación de los campos obligatorios en `build()`. |
-| `Modalidad`, `CanalNotificacion` | Enums usados por los campos opcionales de `Reserva`. |
-| `DemoBuilder` | Demuestra dos configuraciones distintas de `Reserva` y la validación de campos obligatorios. |
-
-El análisis completo (problema inicial de cada patrón, qué clases cambian
-y cuáles permanecen estables, tabla comparativa y conclusiones) está en
-[`docs/ANALISIS.md`](docs/ANALISIS.md).
-
-## Diagramas UML
-
-| Patrón | Fuente PlantUML | Imagen |
+| Patrón | Problema que resuelve | Se mantiene de Ae2 |
 |---|---|---|
-| Factory Method | [`docs/factory-method.puml`](docs/factory-method.puml) | ![Factory Method](docs/factory-method.png) |
-| Builder | [`docs/builder.puml`](docs/builder.puml) | ![Builder](docs/builder.png) |
+| Factory Method | Elegir la implementación de `Notificador` según el canal preferido, sin `if/else`. | Sí, ahora conectado a producción vía `ObservadorNotificaciones`. |
+| Builder | Construir `Reserva` con datos obligatorios/opcionales sin constructor telescópico. | Sí, sobre el `Reserva` real; es la única forma de crearla. |
+| Strategy *(nuevo)* | La antelación mínima para cancelar varía según el tipo de reserva. | — |
+| Observer *(nuevo)* | Varios componentes deben reaccionar a un cambio de estado sin acoplar `ServicioReservas` a cada uno. | — |
+
+Detalle completo (contexto, qué cambia, qué permanece estable, costo)
+en [`docs/INCREMENTO1.md`](docs/INCREMENTO1.md#4-patrones-nuevos-incorporados-semana-4).
+
+## Principios SOLID relevantes
+
+- **SRP**: `Reserva` protege su ciclo de vida y avisa que cambió; no decide cómo se notifica ni si una cancelación es oportuna.
+- **OCP**: nuevo canal → nueva `NotificadorFactory`; nuevo tipo de reserva → nueva `PoliticaCancelacion`; nuevo interesado → nuevo `ReservaObserver`. Ninguno modifica código existente.
+- **DIP**: `ServicioReservas(ReservaRepository, List<ReservaObserver>)` depende de abstracciones.
+
+## Diagrama UML
+
+Fuente: [`docs/uml-incremento1.puml`](docs/uml-incremento1.puml) ·
+Imagen: ![UML incremento 1](docs/uml-incremento1.png)
+
+(Diagramas históricos de Ae2: [`docs/factory-method.puml`](docs/factory-method.puml), [`docs/builder.puml`](docs/builder.puml).)
 
 ## Estructura del repositorio
 
 ```
-semana3-patrones/
+Sistemas_Tutorias/
 ├── README.md
 ├── pom.xml
 ├── docs/
-│   ├── ANALISIS.md
-│   ├── factory-method.puml
-│   ├── factory-method.png
-│   ├── builder.puml
-│   └── builder.png
+│   ├── INCREMENTO1.md          (analisis de Ae3)
+│   ├── ANALISIS.md             (analisis historico de Ae2)
+│   ├── uml-incremento1.puml / .png
+│   └── factory-method.*, builder.*, modelo-clases.*  (historicos)
 └── src/
-    ├── main/java/edu/uees/patrones/
+    ├── main/java/edu/uees/tutorias/
     │   ├── App.java
-    │   ├── factory/   (Notificador, ConcreteProducts, NotificadorFactory, ConcreteCreators, DemoFactoryMethod)
-    │   └── builder/   (Reserva, ReservaBuilder, Modalidad, CanalNotificacion, DemoBuilder)
-    └── test/java/edu/uees/patrones/
-        ├── factory/NotificadorFactoryTest.java
-        └── builder/ReservaBuilderTest.java
+    │   ├── domain/          (entidades, Builder, Observer)
+    │   ├── notification/    (Notificador + factory/ Factory Method)
+    │   ├── observer/        (ConcreteObserver)
+    │   ├── cancelacion/     (Strategy)
+    │   ├── repository/
+    │   └── service/
+    └── test/java/edu/uees/tutorias/
+        ├── domain/ReservaBuilderTest.java
+        ├── notification/factory/NotificadorFactoryTest.java
+        ├── cancelacion/PoliticaCancelacionTest.java
+        └── service/ServicioReservasTest.java
 ```
 
 ## Requisitos para ejecutar el proyecto
@@ -88,17 +117,18 @@ mvn clean compile
 # Compilar y ejecutar las pruebas unitarias (JUnit 5)
 mvn clean test
 
-# Ejecutar la demostración de consola (Factory Method + Builder)
+# Ejecutar la demostracion de consola (Builder + Factory Method + Strategy + Observer)
 mvn compile exec:java
 ```
 
 ## Declaración de uso de inteligencia artificial
 
 Para esta actividad utilicé un asistente de inteligencia artificial
-(Claude). La herramienta se empleó para generar el código Java inicial
-de Factory Method y Builder, el `pom.xml`, los diagramas UML y este
-README, a partir del caso base y los requisitos ya definidos en la guía
-de la actividad. Revisé, probé (compilación y ejecución manual de los
-escenarios cubiertos por las pruebas) y adapté el contenido generado, y
-puedo explicar y justificar el código y las decisiones de diseño
+(Claude). La herramienta se empleó para integrar el código de Ae2
+sobre el dominio de Ae1, generar el código Java de los patrones
+Strategy y Observer, el diagrama UML y la redacción de este README y
+de `docs/INCREMENTO1.md`, a partir de los requisitos de la guía de
+Ae3. Revisé, probé (`mvn clean test` y `mvn compile exec:java`,
+incluidos en este documento) y adapté el contenido generado, y puedo
+explicar y justificar el código y las decisiones de diseño
 presentadas.

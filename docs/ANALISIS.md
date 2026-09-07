@@ -2,6 +2,13 @@
 
 Factory Method y Builder aplicados al Sistema de gestión de tutorías.
 
+> **Nota (Ae3 — Incremento 1):** el razonamiento de este documento sigue
+> vigente, pero el código que describe (`edu.uees.patrones`) se retiró
+> como módulo aislado y se reintegró sobre el dominio real en
+> `edu.uees.tutorias`. Ver [`INCREMENTO1.md`](INCREMENTO1.md) para el
+> análisis actualizado y [`uml-incremento1.puml`](uml-incremento1.puml)
+> para el diagrama vigente.
+
 ## 1. Caso base
 
 El Sistema de gestión de tutorías necesita notificar eventos (una reserva
