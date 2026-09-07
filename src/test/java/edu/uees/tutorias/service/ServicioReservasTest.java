@@ -1,11 +1,14 @@
 package edu.uees.tutorias.service;
 
+import edu.uees.tutorias.cancelacion.CancelacionNoPermitidaException;
 import edu.uees.tutorias.domain.Docente;
 import edu.uees.tutorias.domain.EstadoReserva;
 import edu.uees.tutorias.domain.Estudiante;
 import edu.uees.tutorias.domain.HorarioDisponible;
 import edu.uees.tutorias.domain.Reserva;
-import edu.uees.tutorias.notification.Notificador;
+import edu.uees.tutorias.domain.ReservaBuilder;
+import edu.uees.tutorias.domain.ReservaObserver;
+import edu.uees.tutorias.domain.TipoReserva;
 import edu.uees.tutorias.repository.ReservaRepository;
 import edu.uees.tutorias.repository.ReservaRepositoryMemoria;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,22 +27,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ServicioReservasTest {
 
     /**
-     * Notificador de prueba (test double) que registra los mensajes en
-     * lugar de enviarlos. Es posible gracias a que Notificador es una
-     * abstraccion (DIP/OCP): el servicio no sabe que esta usando una
-     * implementacion distinta a NotificadorCorreo.
+     * Observer de prueba (test double) que registra los eventos en lugar
+     * de notificar de verdad. Es posible gracias a que ReservaObserver es
+     * una abstraccion (DIP/OCP): ni Reserva ni ServicioReservas saben que
+     * estan usando una implementacion distinta a las de produccion.
      */
-    private static class NotificadorEnMemoria implements Notificador {
-        final List<String> mensajes = new ArrayList<>();
+    private static class ObservadorEnMemoria implements ReservaObserver {
+        final List<String> eventos = new ArrayList<>();
 
         @Override
-        public void notificar(edu.uees.tutorias.domain.Usuario destinatario, String mensaje) {
-            mensajes.add(destinatario.getId() + ": " + mensaje);
+        public void onCambioEstado(Reserva reserva, EstadoReserva anterior, EstadoReserva nuevo) {
+            eventos.add(reserva.getId() + ": " + anterior + " -> " + nuevo);
         }
     }
 
     private ReservaRepository repository;
-    private NotificadorEnMemoria notificador;
+    private ObservadorEnMemoria observador;
     private ServicioReservas servicioReservas;
     private Estudiante estudiante;
     private Docente docente;
@@ -48,22 +51,23 @@ class ServicioReservasTest {
     @BeforeEach
     void setUp() {
         repository = new ReservaRepositoryMemoria();
-        notificador = new NotificadorEnMemoria();
-        servicioReservas = new ServicioReservas(repository, notificador);
+        observador = new ObservadorEnMemoria();
+        servicioReservas = new ServicioReservas(repository, List.of(observador));
 
         estudiante = new Estudiante("EST-1", "Ana Perez", "ana@uees.edu.ec", "Software");
         docente = new Docente("DOC-1", "Jaime Sayago", "jsayago@uees.edu.ec", "POO");
-        horario = docente.publicarHorario("HOR-1", LocalDate.now().plusDays(1),
+        horario = docente.publicarHorario("HOR-1", LocalDate.now().plusDays(10),
                 LocalTime.of(9, 0), LocalTime.of(10, 0));
     }
 
     @Test
-    void crearReservaQuedaPendienteYOcupaElHorario() {
+    void crearReservaQuedaPendienteYOcupaElHorarioYNotificaAlObservador() {
         Reserva reserva = servicioReservas.crearReserva(estudiante, docente, horario);
 
         assertEquals(EstadoReserva.PENDIENTE, reserva.getEstado());
         assertFalse(horario.isDisponible());
-        assertFalse(notificador.mensajes.isEmpty());
+        assertFalse(observador.eventos.isEmpty());
+        assertEquals(TipoReserva.NORMAL, reserva.getTipo());
     }
 
     @Test
@@ -86,13 +90,28 @@ class ServicioReservasTest {
     }
 
     @Test
-    void cancelarLiberaElHorario() {
+    void cancelarUnaReservaNormalConAntelacionSuficienteLiberaElHorario() {
         Reserva reserva = servicioReservas.crearReserva(estudiante, docente, horario);
 
         servicioReservas.cancelarReserva(reserva.getId());
 
         assertEquals(EstadoReserva.CANCELADA, reserva.getEstado());
         assertTrue(horario.isDisponible());
+    }
+
+    @Test
+    void cancelarUnaReservaGrupalSinAntelacionSuficienteLanzaExcepcion() {
+        HorarioDisponible horarioCercano = docente.publicarHorario("HOR-2",
+                LocalDate.now(), LocalTime.now().plusHours(3), LocalTime.now().plusHours(4));
+        Reserva reserva = servicioReservas.crearReserva(new ReservaBuilder()
+                .estudiante(estudiante)
+                .docente(docente)
+                .horario(horarioCercano)
+                .tipo(TipoReserva.GRUPAL));
+
+        assertThrows(CancelacionNoPermitidaException.class,
+                () -> servicioReservas.cancelarReserva(reserva.getId()));
+        assertEquals(EstadoReserva.PENDIENTE, reserva.getEstado());
     }
 
     @Test
@@ -106,7 +125,7 @@ class ServicioReservasTest {
     @Test
     void reprogramarMueveLaReservaAOtroHorarioYLiberaElAnterior() {
         Reserva reserva = servicioReservas.crearReserva(estudiante, docente, horario);
-        HorarioDisponible nuevoHorario = docente.publicarHorario("HOR-2", LocalDate.now().plusDays(2),
+        HorarioDisponible nuevoHorario = docente.publicarHorario("HOR-3", LocalDate.now().plusDays(11),
                 LocalTime.of(11, 0), LocalTime.of(12, 0));
 
         servicioReservas.reprogramarReserva(reserva.getId(), nuevoHorario);
