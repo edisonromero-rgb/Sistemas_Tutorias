@@ -16,6 +16,16 @@ import java.util.Set;
  * y a otros componentes que colaboran con ServicioReservas, no con
  * Reserva directamente (ver decision de diseno en la seccion 4 del
  * documento de analisis).
+ *
+ * Incremento 1 (Ae3): Reserva ya no se construye con un constructor
+ * publico de varios parametros. Ademas de los tres datos obligatorios
+ * originales (estudiante, docente, horario), el proyecto necesita
+ * ahora datos opcionales (modalidad, notas, canal de notificacion
+ * preferido, recordatorio) que antes no existian. Un constructor con
+ * 7-8 parametros posicionales, varios de ellos opcionales, es dificil
+ * de leer y propenso a errores; por eso Reserva solo se crea a traves
+ * de {@link ReservaBuilder} (patron Builder), que valida los campos
+ * obligatorios y aplica valores por defecto a los opcionales.
  */
 public class Reserva {
 
@@ -37,16 +47,25 @@ public class Reserva {
     private final Docente docente;
     private HorarioDisponible horario;
     private EstadoReserva estado;
+    private final Modalidad modalidad;
+    private final String notas;
+    private final CanalNotificacion canalNotificacion;
+    private final boolean recordatorioActivado;
 
-    public Reserva(String id, Estudiante estudiante, Docente docente, HorarioDisponible horario) {
-        this.id = Objects.requireNonNull(id);
-        this.estudiante = Objects.requireNonNull(estudiante);
-        this.docente = Objects.requireNonNull(docente);
-        this.horario = Objects.requireNonNull(horario);
+    /** Solo ReservaBuilder puede construir una Reserva (mismo paquete). */
+    Reserva(ReservaBuilder builder) {
+        this.id = Objects.requireNonNull(builder.id);
+        this.estudiante = Objects.requireNonNull(builder.estudiante);
+        this.docente = Objects.requireNonNull(builder.docente);
+        this.horario = Objects.requireNonNull(builder.horario);
         // Regla: no se puede reservar un horario ocupado. La propia
         // franja horaria valida y protege esta condicion.
         this.horario.reservar();
         this.estado = EstadoReserva.PENDIENTE;
+        this.modalidad = builder.modalidad;
+        this.notas = builder.notas;
+        this.canalNotificacion = builder.canalNotificacion;
+        this.recordatorioActivado = builder.recordatorioActivado;
     }
 
     public void confirmar() {
@@ -97,5 +116,21 @@ public class Reserva {
 
     public EstadoReserva getEstado() {
         return estado;
+    }
+
+    public Modalidad getModalidad() {
+        return modalidad;
+    }
+
+    public String getNotas() {
+        return notas;
+    }
+
+    public CanalNotificacion getCanalNotificacion() {
+        return canalNotificacion;
+    }
+
+    public boolean isRecordatorioActivado() {
+        return recordatorioActivado;
     }
 }
