@@ -1,0 +1,65 @@
+@startuml uml-incremento1-patrones
+title Incremento 1 (Ae3) - Colaboracion entre patrones (Strategy, Observer, Factory Method)
+
+interface PoliticaCancelacion {
+  +validar(reserva, ahora): void
+}
+class CancelacionLibre
+class CancelacionConAntelacionMinima {
+  -antelacionMinima: Duration
+}
+class CancelacionNoPermitidaException
+
+PoliticaCancelacion <|.. CancelacionLibre
+PoliticaCancelacion <|.. CancelacionConAntelacionMinima
+CancelacionConAntelacionMinima ..> CancelacionNoPermitidaException : lanza >
+
+interface ReservaObserver {
+  +actualizar(evento): void
+}
+class ReservaPublisher {
+  +suscribir(o): void
+  +publicar(evento): void
+}
+class NotificacionObserver
+class AuditoriaObserver {
+  +getBitacora(): List<String>
+}
+class EstadisticasObserver {
+  +getConteo(tipo): int
+}
+
+ReservaPublisher "1" o-- "0..*" ReservaObserver
+ReservaObserver <|.. NotificacionObserver
+ReservaObserver <|.. AuditoriaObserver
+ReservaObserver <|.. EstadisticasObserver
+
+abstract class NotificadorFactory {
+  +{abstract} crearNotificador(): Notificador
+  +enviar(destinatario, mensaje): void
+}
+class NotificadorCorreoFactory
+class NotificadorSMSFactory
+class NotificadorPushFactory
+class NotificadorFactoryProvider {
+  -fabricas: Map<CanalNotificacion, NotificadorFactory>
+  +factoryPara(canal): NotificadorFactory
+}
+interface Notificador {
+  +notificar(destinatario, mensaje): void
+}
+class NotificadorCorreo
+class NotificadorSMS
+class NotificadorPush
+
+NotificacionObserver --> NotificadorFactoryProvider : usa >
+NotificadorFactoryProvider "1" o-- "0..*" NotificadorFactory
+NotificadorFactory <|-- NotificadorCorreoFactory
+NotificadorFactory <|-- NotificadorSMSFactory
+NotificadorFactory <|-- NotificadorPushFactory
+NotificadorFactory ..> Notificador : crea >
+Notificador <|.. NotificadorCorreo
+Notificador <|.. NotificadorSMS
+Notificador <|.. NotificadorPush
+
+@enduml

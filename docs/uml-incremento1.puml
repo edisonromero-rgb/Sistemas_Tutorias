@@ -1,0 +1,164 @@
+@startuml uml-incremento1
+title Sistema de Gestion de Tutorias - Incremento 1 (Ae3) - Vista general
+
+abstract class Usuario {
+  -id: String
+  -nombre: String
+  -correo: String
+  +getId(): String
+  +getNombre(): String
+  +getCorreo(): String
+}
+
+class Estudiante {
+  -carrera: String
+}
+
+class Docente {
+  -especialidad: String
+  -horariosPublicados: List<HorarioDisponible>
+  +publicarHorario(...): HorarioDisponible
+}
+
+class HorarioDisponible {
+  -fecha: LocalDate
+  -horaInicio: LocalTime
+  -horaFin: LocalTime
+  -disponible: boolean
+  +reservar(): void
+  +liberar(): void
+}
+
+enum Modalidad {
+  PRESENCIAL
+  VIRTUAL
+}
+
+enum CanalNotificacion {
+  EMAIL
+  SMS
+  PUSH
+}
+
+enum EstadoReserva {
+  PENDIENTE
+  CONFIRMADA
+  CANCELADA
+  REPROGRAMADA
+  FINALIZADA
+}
+
+class Reserva {
+  -id: String
+  -estado: EstadoReserva
+  -modalidad: Modalidad
+  -notas: String
+  -canalNotificacion: CanalNotificacion
+  -recordatorioActivado: boolean
+  +confirmar(): void
+  +cancelar(): void
+  +reprogramar(nuevoHorario): void
+  +finalizar(): void
+}
+
+class ReservaBuilder {
+  ~estudiante: Estudiante
+  ~docente: Docente
+  ~horario: HorarioDisponible
+  ~modalidad: Modalidad = PRESENCIAL
+  ~canalNotificacion: CanalNotificacion = EMAIL
+  +estudiante(e): ReservaBuilder
+  +docente(d): ReservaBuilder
+  +horario(h): ReservaBuilder
+  +modalidad(m): ReservaBuilder
+  +canalNotificacion(c): ReservaBuilder
+  +conRecordatorio(): ReservaBuilder
+  +build(): Reserva
+}
+
+enum TipoEvento {
+  CREADA
+  CONFIRMADA
+  CANCELADA
+  REPROGRAMADA
+  FINALIZADA
+}
+
+class ReservaEvento {
+  -tipo: TipoEvento
+  -reserva: Reserva
+  -ocurridoEn: LocalDateTime
+}
+
+interface ReservaRepository {
+  +guardar(reserva): void
+  +buscarPorId(id): Optional<Reserva>
+  +listarTodas(): List<Reserva>
+  +listarPorEstudiante(e): List<Reserva>
+}
+
+class ReservaRepositoryMemoria
+
+interface PoliticaCancelacion {
+  +validar(reserva, ahora): void
+}
+
+class ReservaPublisher {
+  -observers: List<ReservaObserver>
+  +suscribir(o): void
+  +desuscribir(o): void
+  +publicar(evento): void
+}
+
+interface ReservaObserver {
+  +actualizar(evento): void
+}
+
+class ServicioReservas {
+  -repository: ReservaRepository
+  -publisher: ReservaPublisher
+  -politicaCancelacion: PoliticaCancelacion
+  +crearReserva(...): Reserva
+  +confirmarReserva(id): Reserva
+  +cancelarReserva(id): Reserva
+  +reprogramarReserva(id, nuevoHorario): Reserva
+  +finalizarReserva(id): Reserva
+}
+
+Usuario <|-- Estudiante
+Usuario <|-- Docente
+Docente "1" o-- "0..*" HorarioDisponible : publica >
+
+Reserva "0..*" --> "1" Estudiante
+Reserva "0..*" --> "1" Docente
+Reserva "1" --> "1" HorarioDisponible
+Reserva "1" --> "1" EstadoReserva
+Reserva "1" --> "1" Modalidad
+Reserva "1" --> "1" CanalNotificacion
+
+ReservaBuilder ..> Reserva : construye >
+ReservaEvento --> "1" Reserva
+ReservaEvento --> "1" TipoEvento
+
+ReservaRepository <|.. ReservaRepositoryMemoria
+
+ServicioReservas --> ReservaRepository : usa >
+ServicioReservas --> ReservaPublisher : usa >
+ServicioReservas --> PoliticaCancelacion : usa >
+ServicioReservas ..> ReservaBuilder : usa >
+ServicioReservas ..> ReservaEvento : publica >
+
+ReservaPublisher "1" o-- "0..*" ReservaObserver : notifica >
+ReservaPublisher ..> ReservaEvento : distribuye >
+
+note right of PoliticaCancelacion
+  Strategy: variantes intercambiables
+  (ver uml-incremento1-patrones.png)
+end note
+
+note right of ReservaObserver
+  Observer: variantes intercambiables
+  (ver uml-incremento1-patrones.png)
+end note
+
+@enduml

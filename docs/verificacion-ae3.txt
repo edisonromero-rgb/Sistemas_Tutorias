@@ -1,0 +1,57 @@
+-- ReservaBuilder: campos obligatorios --
+  [OK]   guarda estudiante y docente
+-- ReservaBuilder: valores por defecto --
+  [OK]   modalidad por defecto PRESENCIAL
+  [OK]   canal por defecto EMAIL
+  [OK]   notas por defecto vacias
+  [OK]   recordatorio por defecto desactivado
+-- ReservaBuilder: sobrescribir valores --
+  [OK]   modalidad VIRTUAL
+  [OK]   canal SMS
+  [OK]   recordatorio activado
+-- ReservaBuilder: valida campos obligatorios --
+  [OK]   mensaje menciona docente
+  [OK]   mensaje menciona horario
+-- Strategy: CancelacionLibre --
+  [OK]   no lanza excepcion
+-- Strategy: CancelacionConAntelacionMinima (tiempo suficiente) --
+  [OK]   permite cancelar con antelacion suficiente
+-- Strategy: CancelacionConAntelacionMinima (tardia) --
+  [OK]   rechaza cancelacion tardia
+-- Observer: ReservaPublisher entrega a todos --
+  [OK]   observer1 recibe el evento
+  [OK]   observer2 recibe el evento
+-- Observer: desuscribir detiene entrega --
+  [OK]   solo recibio el evento previo a desuscribirse
+-- Observer: AuditoriaObserver + EstadisticasObserver --
+[auditoria] 2026-09-08T03:25:46.537257690 | CREADA | reserva=5420b086-ec3b-4d4a-a617-065332f88c63
+[auditoria] 2026-09-08T03:25:46.545617431 | CREADA | reserva=5420b086-ec3b-4d4a-a617-065332f88c63
+[auditoria] 2026-09-08T03:25:46.545692105 | CANCELADA | reserva=5420b086-ec3b-4d4a-a617-065332f88c63
+  [OK]   estadisticas cuenta 2 CREADA
+  [OK]   estadisticas cuenta 1 CANCELADA
+  [OK]   auditoria registra 3 entradas
+-- ServicioReservas: crear reserva --
+  [OK]   queda PENDIENTE
+  [OK]   horario queda ocupado
+  [OK]   publica al menos un evento
+-- ServicioReservas: no permite horario ocupado --
+  [OK]   rechaza segunda reserva sobre mismo horario
+-- ServicioReservas: confirmar --
+  [OK]   estado CONFIRMADA
+-- ServicioReservas: cancelar libera horario --
+  [OK]   estado CANCELADA
+  [OK]   horario disponible de nuevo
+-- ServicioReservas: no permite finalizar pendiente --
+  [OK]   lanza IllegalStateException
+-- ServicioReservas: reprogramar --
+  [OK]   estado REPROGRAMADA
+  [OK]   horario anterior liberado
+  [OK]   horario nuevo ocupado
+  [OK]   reserva apunta al nuevo horario
+-- ServicioReservas: listar por estudiante --
+  [OK]   devuelve 1 reserva
+-- ServicioReservas: politica de cancelacion inyectada --
+  [OK]   rechaza cancelacion tardia
+  [OK]   reserva permanece PENDIENTE
+
+RESULTADO: 34 OK, 0 FALLOS de 34 verificaciones.
