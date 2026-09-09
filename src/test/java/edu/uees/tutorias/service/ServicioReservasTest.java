@@ -5,13 +5,20 @@ import edu.uees.tutorias.domain.EstadoReserva;
 import edu.uees.tutorias.domain.Estudiante;
 import edu.uees.tutorias.domain.HorarioDisponible;
 import edu.uees.tutorias.domain.Reserva;
-import edu.uees.tutorias.notification.Notificador;
+import edu.uees.tutorias.domain.ReservaEvento;
+import edu.uees.tutorias.observer.ReservaObserver;
+import edu.uees.tutorias.observer.ReservaPublisher;
 import edu.uees.tutorias.repository.ReservaRepository;
 import edu.uees.tutorias.repository.ReservaRepositoryMemoria;
+import edu.uees.tutorias.strategy.CancelacionConAntelacionMinima;
+import edu.uees.tutorias.strategy.CancelacionLibre;
+import edu.uees.tutorias.strategy.CancelacionNoPermitidaException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,22 +31,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ServicioReservasTest {
 
     /**
-     * Notificador de prueba (test double) que registra los mensajes en
-     * lugar de enviarlos. Es posible gracias a que Notificador es una
-     * abstraccion (DIP/OCP): el servicio no sabe que esta usando una
-     * implementacion distinta a NotificadorCorreo.
+     * Observer de prueba (test double) que registra los eventos en lugar
+     * de notificar/auditar de verdad. Es posible gracias a que
+     * ReservaObserver es una abstraccion: ServicioReservas no sabe que
+     * esta usando una implementacion distinta a las de produccion.
      */
-    private static class NotificadorEnMemoria implements Notificador {
-        final List<String> mensajes = new ArrayList<>();
+    private static class ObserverEnMemoria implements ReservaObserver {
+        final List<ReservaEvento> eventos = new ArrayList<>();
 
         @Override
-        public void notificar(edu.uees.tutorias.domain.Usuario destinatario, String mensaje) {
-            mensajes.add(destinatario.getId() + ": " + mensaje);
+        public void actualizar(ReservaEvento evento) {
+            eventos.add(evento);
         }
     }
 
     private ReservaRepository repository;
-    private NotificadorEnMemoria notificador;
+    private ObserverEnMemoria observer;
     private ServicioReservas servicioReservas;
     private Estudiante estudiante;
     private Docente docente;
@@ -48,8 +55,10 @@ class ServicioReservasTest {
     @BeforeEach
     void setUp() {
         repository = new ReservaRepositoryMemoria();
-        notificador = new NotificadorEnMemoria();
-        servicioReservas = new ServicioReservas(repository, notificador);
+        observer = new ObserverEnMemoria();
+        ReservaPublisher publisher = new ReservaPublisher();
+        publisher.suscribir(observer);
+        servicioReservas = new ServicioReservas(repository, publisher, new CancelacionLibre());
 
         estudiante = new Estudiante("EST-1", "Ana Perez", "ana@uees.edu.ec", "Software");
         docente = new Docente("DOC-1", "Jaime Sayago", "jsayago@uees.edu.ec", "POO");
@@ -58,12 +67,12 @@ class ServicioReservasTest {
     }
 
     @Test
-    void crearReservaQuedaPendienteYOcupaElHorario() {
+    void crearReservaQuedaPendienteYOcupaElHorarioYPublicaEvento() {
         Reserva reserva = servicioReservas.crearReserva(estudiante, docente, horario);
 
         assertEquals(EstadoReserva.PENDIENTE, reserva.getEstado());
         assertFalse(horario.isDisponible());
-        assertFalse(notificador.mensajes.isEmpty());
+        assertFalse(observer.eventos.isEmpty());
     }
 
     @Test
@@ -124,5 +133,19 @@ class ServicioReservasTest {
         List<Reserva> reservas = servicioReservas.listarReservasPorEstudiante(estudiante);
 
         assertEquals(1, reservas.size());
+    }
+
+    @Test
+    void politicaDeCancelacionConAntelacionMinimaRechazaCancelacionTardia() {
+        ReservaPublisher publisher = new ReservaPublisher();
+        ServicioReservas servicioConPolitica = new ServicioReservas(
+                repository, publisher, new CancelacionConAntelacionMinima(Duration.ofHours(2)));
+
+        Reserva reserva = servicioConPolitica.crearReserva(estudiante, docente, horario);
+        LocalDateTime muyCerca = LocalDateTime.of(horario.getFecha(), horario.getHoraInicio()).minusMinutes(30);
+
+        assertThrows(CancelacionNoPermitidaException.class,
+                () -> servicioConPolitica.cancelarReserva(reserva.getId(), muyCerca));
+        assertEquals(EstadoReserva.PENDIENTE, reserva.getEstado());
     }
 }
