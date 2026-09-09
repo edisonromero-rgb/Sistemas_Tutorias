@@ -1,0 +1,62 @@
+@startuml factory-method
+title Factory Method - Notificaciones del Sistema de Gestion de Tutorias
+
+interface Notificador {
+  +notificar(destinatario: String, mensaje: String): void
+}
+
+class NotificadorCorreo {
+  +notificar(destinatario: String, mensaje: String): void
+}
+class NotificadorSMS {
+  +notificar(destinatario: String, mensaje: String): void
+}
+class NotificadorPush {
+  +notificar(destinatario: String, mensaje: String): void
+}
+class NotificadorWhatsApp {
+  +notificar(destinatario: String, mensaje: String): void
+}
+
+abstract class NotificadorFactory {
+  #{abstract} crearNotificador(): Notificador
+  +enviar(destinatario: String, mensaje: String): void
+}
+
+class NotificadorCorreoFactory {
+  #crearNotificador(): Notificador
+}
+class NotificadorSMSFactory {
+  #crearNotificador(): Notificador
+}
+class NotificadorPushFactory {
+  #crearNotificador(): Notificador
+}
+class NotificadorWhatsAppFactory {
+  #crearNotificador(): Notificador
+}
+
+Notificador <|.. NotificadorCorreo
+Notificador <|.. NotificadorSMS
+Notificador <|.. NotificadorPush
+Notificador <|.. NotificadorWhatsApp
+
+NotificadorFactory <|-- NotificadorCorreoFactory
+NotificadorFactory <|-- NotificadorSMSFactory
+NotificadorFactory <|-- NotificadorPushFactory
+NotificadorFactory <|-- NotificadorWhatsAppFactory
+
+NotificadorCorreoFactory ..> NotificadorCorreo : crea >
+NotificadorSMSFactory ..> NotificadorSMS : crea >
+NotificadorPushFactory ..> NotificadorPush : crea >
+NotificadorWhatsAppFactory ..> NotificadorWhatsApp : crea >
+
+NotificadorFactory ..> Notificador : usa >
+
+note right of NotificadorWhatsAppFactory
+  Variante agregada despues,
+  sin modificar las clases
+  existentes (extensibilidad).
+end note
+
+@enduml

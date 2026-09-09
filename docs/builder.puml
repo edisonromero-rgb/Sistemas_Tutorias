@@ -1,0 +1,68 @@
+@startuml builder
+title Builder - Construccion de Reserva
+
+enum Modalidad {
+  PRESENCIAL
+  VIRTUAL
+}
+
+enum CanalNotificacion {
+  EMAIL
+  SMS
+  PUSH
+  WHATSAPP
+}
+
+class Reserva {
+  -id: String
+  -estudiante: String
+  -docente: String
+  -fecha: LocalDate
+  -horaInicio: LocalTime
+  -horaFin: LocalTime
+  -modalidad: Modalidad
+  -notas: String
+  -canalNotificacion: CanalNotificacion
+  -recordatorioActivado: boolean
+  ~Reserva(builder: ReservaBuilder)
+  +getEstudiante(): String
+  +getDocente(): String
+  +getModalidad(): Modalidad
+  +getCanalNotificacion(): CanalNotificacion
+  +isRecordatorioActivado(): boolean
+}
+
+class ReservaBuilder {
+  -id: String
+  -estudiante: String
+  -docente: String
+  -fecha: LocalDate
+  -horaInicio: LocalTime
+  -horaFin: LocalTime
+  -modalidad: Modalidad = PRESENCIAL
+  -notas: String = ""
+  -canalNotificacion: CanalNotificacion = EMAIL
+  -recordatorioActivado: boolean = false
+  +estudiante(estudiante: String): ReservaBuilder
+  +docente(docente: String): ReservaBuilder
+  +horario(fecha, horaInicio, horaFin): ReservaBuilder
+  +modalidad(modalidad: Modalidad): ReservaBuilder
+  +notas(notas: String): ReservaBuilder
+  +canalNotificacion(canal: CanalNotificacion): ReservaBuilder
+  +conRecordatorio(): ReservaBuilder
+  +build(): Reserva
+}
+
+ReservaBuilder ..> Reserva : construye >
+Reserva --> Modalidad
+Reserva --> CanalNotificacion
+ReservaBuilder --> Modalidad
+ReservaBuilder --> CanalNotificacion
+
+note right of ReservaBuilder
+  build() valida que estudiante,
+  docente y horario esten presentes
+  antes de crear la Reserva.
+end note
+
+@enduml
