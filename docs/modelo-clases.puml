@@ -1,0 +1,101 @@
+@startuml modelo-clases
+title Sistema de Gestion de Tutorias - Diagrama de clases
+
+abstract class Usuario {
+  -id: String
+  -nombre: String
+  -correo: String
+  +getId(): String
+  +getNombre(): String
+  +getCorreo(): String
+}
+
+class Estudiante {
+  -carrera: String
+  +getCarrera(): String
+}
+
+class Docente {
+  -especialidad: String
+  -horariosPublicados: List<HorarioDisponible>
+  +publicarHorario(...): HorarioDisponible
+  +getHorariosPublicados(): List<HorarioDisponible>
+}
+
+class HorarioDisponible {
+  -id: String
+  -fecha: LocalDate
+  -horaInicio: LocalTime
+  -horaFin: LocalTime
+  -disponible: boolean
+  +reservar(): void
+  +liberar(): void
+  +isDisponible(): boolean
+}
+
+enum EstadoReserva {
+  PENDIENTE
+  CONFIRMADA
+  CANCELADA
+  REPROGRAMADA
+  FINALIZADA
+}
+
+class Reserva {
+  -id: String
+  -estado: EstadoReserva
+  +confirmar(): void
+  +cancelar(): void
+  +reprogramar(nuevoHorario: HorarioDisponible): void
+  +finalizar(): void
+}
+
+interface Notificador {
+  +notificar(destinatario: Usuario, mensaje: String): void
+}
+
+class NotificadorCorreo {
+  +notificar(destinatario: Usuario, mensaje: String): void
+}
+
+interface ReservaRepository {
+  +guardar(reserva: Reserva): void
+  +buscarPorId(id: String): Optional<Reserva>
+  +listarTodas(): List<Reserva>
+  +listarPorEstudiante(estudiante: Estudiante): List<Reserva>
+}
+
+class ReservaRepositoryMemoria {
+  +guardar(reserva: Reserva): void
+  +buscarPorId(id: String): Optional<Reserva>
+  +listarTodas(): List<Reserva>
+  +listarPorEstudiante(estudiante: Estudiante): List<Reserva>
+}
+
+class ServicioReservas {
+  -repository: ReservaRepository
+  -notificador: Notificador
+  +crearReserva(...): Reserva
+  +confirmarReserva(id: String): Reserva
+  +cancelarReserva(id: String): Reserva
+  +reprogramarReserva(id: String, nuevoHorario: HorarioDisponible): Reserva
+  +finalizarReserva(id: String): Reserva
+}
+
+Usuario <|-- Estudiante
+Usuario <|-- Docente
+
+Docente "1" o-- "0..*" HorarioDisponible : publica >
+Reserva "0..*" --> "1" Estudiante
+Reserva "0..*" --> "1" Docente
+Reserva "1" --> "1" HorarioDisponible
+Reserva "1" --> "1" EstadoReserva
+
+Notificador <|.. NotificadorCorreo
+ReservaRepository <|.. ReservaRepositoryMemoria
+
+ServicioReservas --> ReservaRepository : usa >
+ServicioReservas --> Notificador : usa >
+ServicioReservas ..> Reserva : crea/coordina >
+
+@enduml
