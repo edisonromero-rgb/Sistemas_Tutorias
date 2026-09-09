@@ -1,4 +1,5 @@
 # Sistema de Gestión de Tutorías
+*Repositorio:*https://github.com/edisonromero-rgb/Sistemas_Tutorias
 
 Modelo orientado a objetos, en Java/Maven, de un sistema que coordina la
 solicitud y gestión de tutorías académicas entre estudiantes y docentes.
@@ -129,6 +130,14 @@ mvn compile exec:java
 
 ## Declaración de uso de inteligencia artificial
 
+Declaración de uso de IA:
+Durante el desarrollo de esta actividad utilicé / no utilicé herramientas
+de inteligencia artificial.
+
+En caso de uso, las utilicé para: ___________.
+
+Verifiqué y adapté las respuestas obtenidas, y puedo explicar y justificar
+
 Se utilizó un asistente de inteligencia artificial (Claude) como apoyo para
 generar el andamiaje inicial del código Java, el `pom.xml` y este
 `README.md` a partir del análisis de dominio y del diseño ya documentados
@@ -137,3 +146,18 @@ de negocio y decisiones de cohesión/acoplamiento/SOLID). El estudiante es
 responsable de comprender, verificar, probar y justificar todo el
 contenido y código presentado, y de adaptarlo según el criterio del
 docente.
+
+## Patrones de diseño (Ae2)
+
+Se incorporó el paquete `edu.uees.patrones` con dos patrones creacionales aplicados
+al mismo caso del sistema de tutorías:
+
+- **Factory Method** (`edu.uees.patrones.factory`): desacopla la creación del
+  `Notificador` correcto (correo, SMS, push, WhatsApp) del código cliente.
+- **Builder** (`edu.uees.patrones.builder`): construye una `Reserva` con campos
+  obligatorios y opcionales mediante una API fluida, evitando un constructor
+  telescópico.
+
+Diagramas UML: [`docs/factory-method.png`](docs/factory-method.png),
+[`docs/builder.png`](docs/builder.png). Análisis y comparación técnica completa
+en [`docs/ANALISIS.md`](docs/ANALISIS.md).
